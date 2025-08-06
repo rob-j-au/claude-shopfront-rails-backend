@@ -1,0 +1,49 @@
+<div id="<%= dom_id category %>" class="card h-100 shadow-sm">
+  <div class="card-body d-flex flex-column">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <h5 class="card-title mb-0"><%= category.name %></h5>
+      <% if category.active %>
+        <span class="badge bg-success">
+          <i class="bi bi-check-circle me-1"></i>
+          Active
+        </span>
+      <% else %>
+        <span class="badge bg-secondary">
+          <i class="bi bi-pause-circle me-1"></i>
+          Inactive
+        </span>
+      <% end %>
+    </div>
+    
+    <% if category.description.present? %>
+      <p class="card-text text-muted mb-3"><%= truncate(category.description, length: 100) %></p>
+    <% else %>
+      <p class="card-text text-muted fst-italic mb-3">No description provided</p>
+    <% end %>
+    
+    <% products_count = category.products.count %>
+    <div class="d-flex align-items-center mb-4">
+      <div class="d-flex align-items-center">
+        <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2" 
+             style="width: 32px; height: 32px;">
+          <i class="bi bi-box-seam text-primary"></i>
+        </div>
+        <small class="text-muted"><%= pluralize(products_count, 'product') %></small>
+      </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="mt-auto">
+      <div class="d-grid gap-2">
+        <%= link_to category, class: "btn btn-primary" do %>
+          <i class="bi bi-eye me-2"></i>
+          View Category
+        <% end %>
+        <%= link_to edit_category_path(category), class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-pencil me-2"></i>
+          Edit Category
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

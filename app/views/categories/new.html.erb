@@ -1,0 +1,29 @@
+<% content_for :title, "New Category" %>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><%= link_to "Categories", categories_path %></li>
+            <li class="breadcrumb-item active" aria-current="page">New Category</li>
+          </ol>
+        </nav>
+      </div>
+
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h1 class="h3 mb-0">
+            <i class="bi bi-plus-circle me-3"></i>
+            New Category
+          </h1>
+        </div>
+        
+        <div class="card-body">
+          <%= render "form", category: @category %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

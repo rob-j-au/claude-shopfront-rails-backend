@@ -1,0 +1,63 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+wireless_headphones:
+  name: Wireless Bluetooth Headphones
+  description: High-quality wireless headphones with noise cancellation and 30-hour battery life
+  price: 199.99
+  stock_quantity: 25
+  sku: WBH-001
+  category: electronics
+  active: true
+
+fitness_watch:
+  name: Smart Fitness Watch
+  description: Track your fitness goals with this advanced smartwatch featuring heart rate monitoring
+  price: 299.99
+  stock_quantity: 15
+  sku: SFW-002
+  category: electronics
+  active: true
+
+programming_book:
+  name: Ruby Programming Guide
+  description: Complete guide to Ruby programming for beginners and experts
+  price: 49.99
+  stock_quantity: 100
+  sku: RPG-001
+  category: books
+  active: true
+
+laptop_stand:
+  name: Portable Laptop Stand
+  description: Ergonomic aluminum laptop stand that's lightweight and adjustable
+  price: 49.99
+  stock_quantity: 50
+  sku: PLS-003
+  category: home_garden
+  active: true
+
+out_of_stock_product:
+  name: Out of Stock Item
+  description: This product is currently out of stock for testing
+  price: 29.99
+  stock_quantity: 0
+  sku: OOS-001
+  category: electronics
+  active: true
+
+inactive_product:
+  name: Inactive Product
+  description: This product is inactive for testing
+  price: 19.99
+  stock_quantity: 10
+  sku: INACTIVE-001
+  category: books
+  active: false
+
+product_without_category:
+  name: Product Without Category
+  description: This product has no category assigned for testing
+  price: 39.99
+  stock_quantity: 20
+  sku: PWC-001
+  active: true

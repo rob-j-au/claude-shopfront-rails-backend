@@ -1,0 +1,75 @@
+<div class="row">
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Order <%= @order.order_number %></h1>
+      <span class="badge bg-<%= @order.status == 'delivered' ? 'success' : @order.status == 'cancelled' ? 'danger' : 'primary' %> fs-6">
+        <%= @order.status.titleize %>
+      </span>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Order Details</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Order Date:</strong> <%= @order.created_at.strftime("%B %d, %Y at %I:%M %p") %><br>
+          <strong>Total Amount:</strong> <%= @order.formatted_total_amount %>
+        </p>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h5>Items Ordered</h5>
+      </div>
+      <div class="card-body">
+        <% @order.line_items.each do |line_item| %>
+          <div class="row align-items-center mb-3 pb-3 border-bottom">
+            <div class="col-md-6">
+              <h6><%= line_item.product.name %></h6>
+              <p class="text-muted mb-0">SKU: <%= line_item.product.sku %></p>
+            </div>
+            <div class="col-md-2">
+              <span>Qty: <%= line_item.quantity %></span>
+            </div>
+            <div class="col-md-2">
+              <span><%= "$#{'%.2f' % line_item.price}" %> each</span>
+            </div>
+            <div class="col-md-2 text-end">
+              <strong><%= line_item.formatted_total_price %></strong>
+            </div>
+          </div>
+        <% end %>
+        
+        <div class="row">
+          <div class="col-md-8"></div>
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between">
+              <strong>Total: <%= @order.formatted_total_amount %></strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5>Order Actions</h5>
+      </div>
+      <div class="card-body">
+        <% if @order.can_be_cancelled? %>
+          <%= form_with model: @order, url: order_path(@order), method: :patch, local: true, authenticity_token: true do |form| %>
+            <%= form.hidden_field :action_type, value: 'cancel' %>
+            <%= form.submit "Cancel Order", class: "btn btn-danger w-100 mb-2", 
+                            data: { confirm: "Are you sure you want to cancel this order?" } %>
+          <% end %>
+        <% end %>
+        
+        <%= link_to "Back to Orders", orders_path, class: "btn btn-outline-secondary w-100" %>
+      </div>
+    </div>
+  </div>
+</div>

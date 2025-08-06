@@ -1,0 +1,400 @@
+<div class="container glass-container pt-4 pb-5">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <h1 class="h2 mb-0 glass-text-white fw-light">
+      <i class="bi bi-grid-3x3-gap me-3"></i>
+      Products
+    </h1>
+    <%= link_to new_product_path, class: "btn btn-primary" do %>
+      <i class="bi bi-plus-circle me-2"></i>
+      New Product
+    <% end %>
+  </div>
+
+  <!-- Infinite Scroll Status -->
+  <div id="infinite-scroll-status" class="glass-alert mb-4">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-infinity me-2"></i>
+      Infinite scroll is ready! Scroll down to load more products.
+    </div>
+  </div>
+
+  <!-- Search and Filter Form -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_with url: products_path, method: :get, local: true, class: "row g-3 align-items-end" do |form| %>
+        <div class="col-md-5 position-relative">
+          <%= form.label :search, class: "form-label" do %>
+            <i class="bi bi-search me-1"></i>
+            Search Products
+          <% end %>
+          <%= form.text_field :search, 
+                              value: params[:search], 
+                              placeholder: "Search by name...", 
+                              class: "form-control",
+                              id: "search-input",
+                              autocomplete: "off" %>
+          <!-- Autocomplete dropdown -->
+          <div id="autocomplete-dropdown" class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm" style="top: 100%; z-index: 1000; display: none; max-height: 200px; overflow-y: auto;">
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <%= form.label :category, class: "form-label" do %>
+            <i class="bi bi-folder me-1"></i>
+            Filter by Category
+          <% end %>
+          <%= form.collection_select :category, 
+                          Category.active.ordered, 
+                          :name, 
+                          :name, 
+                          { prompt: "All Categories" }, 
+                          { class: "form-select" } %>
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end gap-2">
+          <div class="flex-fill">
+            <%= form.submit "Search", class: "btn btn-primary flex-fill" %>
+            <%= link_to "Clear", products_path, class: "btn btn-secondary flex-fill" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+
+
+  <!-- Products Grid -->
+  <div class="row" id="products-container">
+    <div class="row" id="products-list">
+      <% if @products.any? %>
+        <%= render partial: 'product_card', collection: @products, as: :product %>
+      <% else %>
+        <div class="col-12">
+          <div class="text-center py-5">
+            <div class="card p-5">
+              <div class="mb-4">
+                <i class="bi bi-box-seam" style="font-size: 4rem; color: rgba(255, 255, 255, 0.4);"></i>
+              </div>
+              <h3 class="fw-light mb-3">No Products Found</h3>
+              <p class="text-muted mb-4">
+                <% if params[:search].present? || params[:category].present? %>
+                  Try adjusting your search criteria or browse all products.
+                <% else %>
+                  Get started by creating your first product.
+                <% end %>
+              </p>
+              <div class="d-flex gap-2 justify-content-center">
+                <%= link_to new_product_path, class: "btn btn-primary" do %>
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Add First Product
+                <% end %>
+                <% if params[:search].present? || params[:category].present? %>
+                  <%= link_to products_path, class: "btn btn-secondary" do %>
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Refresh
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+  
+  <!-- Loading indicator -->
+  <div id="loading-indicator" class="text-center mt-4" style="display: none;">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading more products...</p>
+  </div>
+
+  <!-- End of results message -->
+  <div id="end-message" class="text-center mt-4" style="display: none;">
+    <h6>You've reached the end!</h6>
+    <p class="text-muted">Showing all <%= @total_count %> products.</p>
+  </div>
+</div>
+
+<script>
+// Vanilla JavaScript Infinite Scroll Implementation
+(function() {
+  let currentPage = <%= @current_page %>;
+  let totalPages = <%= @total_pages %>;
+  let isLoading = false;
+  const baseUrl = '<%= products_path %>';
+  
+  // Get current search parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchParams = {
+    search: urlParams.get('search') || '',
+    category: urlParams.get('category') || ''
+  };
+  
+  console.log('Infinite scroll initialized:', {
+    currentPage: currentPage,
+    totalPages: totalPages,
+    searchParams: searchParams
+  });
+  
+  // Update status message
+  const statusElement = document.getElementById('infinite-scroll-status');
+  if (statusElement) {
+    statusElement.textContent = `Infinite scroll active! Page ${currentPage} of ${totalPages}`;
+    statusElement.className = 'alert alert-success mb-3';
+  }
+  
+  // Get DOM elements
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const endMessage = document.getElementById('end-message');
+  const productsList = document.getElementById('products-list');
+  
+  // Show appropriate message based on pagination state
+  if (currentPage >= totalPages) {
+    endMessage.style.display = 'block';
+  } else {
+    loadingIndicator.style.display = 'block';
+  }
+  
+  // Function to load more products
+  function loadMoreProducts() {
+    if (isLoading || currentPage >= totalPages) return;
+    
+    isLoading = true;
+    const nextPage = currentPage + 1;
+    
+    console.log('Loading page:', nextPage);
+    
+    // Build URL with search parameters
+    const params = new URLSearchParams(searchParams);
+    params.set('page', nextPage);
+    const url = `${baseUrl}.json?${params.toString()}`;
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Loaded products:', data.products.length);
+        
+        // Add new products to the list using rendered HTML partials
+        data.products.forEach(product => {
+          // Use the server-rendered HTML partial for consistency
+          productsList.insertAdjacentHTML('beforeend', product.html);
+        });
+        
+        // Update pagination state
+        currentPage = data.pagination.current_page;
+        totalPages = data.pagination.total_pages;
+        
+        // Update status
+        if (statusElement) {
+          statusElement.textContent = `Loaded page ${currentPage} of ${totalPages}`;
+        }
+        
+        // Show/hide loading indicators
+        if (currentPage >= totalPages) {
+          loadingIndicator.style.display = 'none';
+          endMessage.style.display = 'block';
+        }
+        
+        isLoading = false;
+      })
+      .catch(error => {
+        console.error('Error loading products:', error);
+        isLoading = false;
+        if (statusElement) {
+          statusElement.textContent = 'Error loading more products. Please try again.';
+          statusElement.className = 'alert alert-danger mb-3';
+        }
+      });
+  }
+  
+  // Set up intersection observer
+  if (loadingIndicator) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && currentPage < totalPages) {
+          console.log('Loading indicator visible, loading more products...');
+          loadMoreProducts();
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '100px'
+    });
+    
+    observer.observe(loadingIndicator);
+  }
+  
+})();
+
+// Autocomplete functionality
+(function() {
+  const searchInput = document.getElementById('search-input');
+  const dropdown = document.getElementById('autocomplete-dropdown');
+  let debounceTimer;
+  let currentSuggestions = [];
+  let selectedIndex = -1;
+  
+  if (!searchInput || !dropdown) return;
+  
+  // Debounced search function
+  function debounceSearch(query) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (query.length >= 2) {
+        fetchSuggestions(query);
+      } else {
+        hideDropdown();
+      }
+    }, 300);
+  }
+  
+  // Fetch suggestions from server
+  function fetchSuggestions(query) {
+    fetch(`<%= autocomplete_products_path %>?q=${encodeURIComponent(query)}`)
+      .then(response => response.json())
+      .then(suggestions => {
+        currentSuggestions = suggestions;
+        selectedIndex = -1;
+        displaySuggestions(suggestions);
+      })
+      .catch(error => {
+        console.error('Autocomplete error:', error);
+        hideDropdown();
+      });
+  }
+  
+  // Display suggestions in dropdown
+  function displaySuggestions(suggestions) {
+    if (suggestions.length === 0) {
+      hideDropdown();
+      return;
+    }
+    
+    dropdown.innerHTML = suggestions.map((suggestion, index) => 
+      `<div class="autocomplete-item px-3 py-2 cursor-pointer border-bottom" data-index="${index}" style="cursor: pointer;">
+        ${escapeHtml(suggestion)}
+      </div>`
+    ).join('');
+    
+    showDropdown();
+    
+    // Add click handlers to suggestions
+    dropdown.querySelectorAll('.autocomplete-item').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        selectSuggestion(index);
+      });
+      
+      // Add hover effects
+      item.addEventListener('mouseenter', () => {
+        clearSelection();
+        item.classList.add('bg-light');
+        selectedIndex = index;
+      });
+      
+      item.addEventListener('mouseleave', () => {
+        item.classList.remove('bg-light');
+      });
+    });
+  }
+  
+  // Select a suggestion
+  function selectSuggestion(index) {
+    if (index >= 0 && index < currentSuggestions.length) {
+      searchInput.value = currentSuggestions[index];
+      hideDropdown();
+      // Optionally trigger search immediately
+      searchInput.form.submit();
+    }
+  }
+  
+  // Show dropdown
+  function showDropdown() {
+    dropdown.style.display = 'block';
+  }
+  
+  // Hide dropdown
+  function hideDropdown() {
+    dropdown.style.display = 'none';
+    selectedIndex = -1;
+  }
+  
+  // Clear selection highlighting
+  function clearSelection() {
+    dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+      item.classList.remove('bg-light');
+    });
+  }
+  
+  // Update selection highlighting
+  function updateSelection() {
+    clearSelection();
+    if (selectedIndex >= 0) {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (items[selectedIndex]) {
+        items[selectedIndex].classList.add('bg-light');
+      }
+    }
+  }
+  
+  // Escape HTML to prevent XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  // Event listeners
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    debounceSearch(query);
+  });
+  
+  searchInput.addEventListener('keydown', (e) => {
+    if (dropdown.style.display === 'none') return;
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, currentSuggestions.length - 1);
+        updateSelection();
+        break;
+        
+      case 'ArrowUp':
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelection();
+        break;
+        
+      case 'Enter':
+        if (selectedIndex >= 0) {
+          e.preventDefault();
+          selectSuggestion(selectedIndex);
+        }
+        break;
+        
+      case 'Escape':
+        hideDropdown();
+        break;
+    }
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      hideDropdown();
+    }
+  });
+  
+  // Hide dropdown when search input loses focus (with delay to allow clicks)
+  searchInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (document.activeElement !== searchInput) {
+        hideDropdown();
+      }
+    }, 150);
+  });
+  
+})();
+</script>

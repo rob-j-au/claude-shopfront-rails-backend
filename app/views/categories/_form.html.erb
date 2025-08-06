@@ -1,0 +1,77 @@
+<%= form_with(model: category, local: true) do |form| %>
+  <% if category.errors.any? %>
+    <div class="alert alert-danger mb-4" role="alert">
+      <h5 class="mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <%= pluralize(category.errors.count, "error") %> prohibited this category from being saved:
+      </h5>
+      <ul class="mb-0">
+        <% category.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= form.label :name, class: "form-label" do %>
+      <i class="bi bi-tag me-1"></i>
+      Category Name
+    <% end %>
+    <%= form.text_field :name, class: "form-control #{'is-invalid' if category.errors[:name].any?}", 
+        placeholder: "Enter category name" %>
+    <% if category.errors[:name].any? %>
+      <div class="invalid-feedback">
+        <%= category.errors[:name].first %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :description, class: "form-label" do %>
+      <i class="bi bi-file-text me-1"></i>
+      Description
+    <% end %>
+    <%= form.textarea :description, class: "form-control #{'is-invalid' if category.errors[:description].any?}", 
+        rows: 4, placeholder: "Describe this category..." %>
+    <% if category.errors[:description].any? %>
+      <div class="invalid-feedback">
+        <%= category.errors[:description].first %>
+      </div>
+    <% else %>
+      <div class="form-text">Provide a brief description to help identify this category.</div>
+    <% end %>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-4">
+        <div class="form-check">
+          <%= form.check_box :active, class: "form-check-input #{'is-invalid' if category.errors[:active].any?}" %>
+          <%= form.label :active, class: "form-check-label" do %>
+            <i class="bi bi-toggle-on me-1"></i>
+            Active Category
+          <% end %>
+          <div class="form-text">Only active categories will be available for product assignment.</div>
+        </div>
+        
+        <% if category.errors[:active].any? %>
+          <div class="invalid-feedback d-block">
+            <%= category.errors[:active].first %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+    <%= form.submit class: "btn btn-primary" do %>
+      <i class="bi bi-check me-2"></i>
+      <%= category.persisted? ? 'Update Category' : 'Create Category' %>
+    <% end %>
+    <%= link_to category.persisted? ? category : categories_path, class: "btn btn-secondary" do %>
+      <i class="bi bi-arrow-left me-2"></i>
+      Cancel
+    <% end %>
+  </div>
+<% end %>

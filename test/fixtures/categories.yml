@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+electronics:
+  name: Electronics
+  description: Electronic devices, gadgets, and accessories
+  active: true
+
+books:
+  name: Books & Media
+  description: Books, magazines, movies, and digital media
+  active: true
+
+home_garden:
+  name: Home & Garden
+  description: Home improvement, furniture, and garden supplies
+  active: true
+
+inactive_category:
+  name: Inactive Category
+  description: This category is inactive for testing
+  active: false

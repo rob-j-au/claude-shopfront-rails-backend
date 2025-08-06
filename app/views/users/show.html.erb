@@ -1,0 +1,42 @@
+<div class="row">
+  <div class="col-md-8">
+    <h1>Profile</h1>
+    
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><%= @user.full_name %></h5>
+        <p class="card-text">
+          <strong>Email:</strong> <%= @user.email %><br>
+          <strong>Member since:</strong> <%= @user.created_at.strftime("%B %d, %Y") %>
+        </p>
+        <%= link_to "Edit Profile", edit_user_path(@user), class: "btn btn-primary" %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <h3>Recent Orders</h3>
+    <% if @user.orders.recent.limit(5).any? %>
+      <% @user.orders.recent.limit(5).each do |order| %>
+        <div class="card mb-2">
+          <div class="card-body">
+            <h6 class="card-title"><%= order.order_number %></h6>
+            <p class="card-text">
+              <small class="text-muted">
+                <%= order.created_at.strftime("%m/%d/%Y") %> - 
+                <span class="badge bg-<%= order.status == 'delivered' ? 'success' : 'primary' %>">
+                  <%= order.status.titleize %>
+                </span>
+              </small><br>
+              <strong><%= order.formatted_total_amount %></strong>
+            </p>
+            <%= link_to "View", order, class: "btn btn-outline-primary btn-sm" %>
+          </div>
+        </div>
+      <% end %>
+      <%= link_to "View All Orders", orders_path, class: "btn btn-outline-secondary btn-sm" %>
+    <% else %>
+      <p class="text-muted">No orders yet</p>
+    <% end %>
+  </div>
+</div>

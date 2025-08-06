@@ -1,0 +1,49 @@
+<% content_for :title, "Categories" %>
+
+<div class="glass-background">
+  <div class="container glass-container pt-4 pb-5">
+    <% if notice %>
+      <div class="glass-alert glass-alert-success mb-4" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-check-circle me-2"></i>
+          <%= notice %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+      <h1 class="h2 mb-0 glass-text-white fw-light">
+        <i class="bi bi-grid-3x3-gap me-3"></i>
+        Categories
+      </h1>
+      <%= link_to new_category_path, class: "btn btn-primary" do %>
+        <i class="bi bi-plus-circle me-2"></i>
+        New Category
+      <% end %>
+    </div>
+
+    <% if @categories.any? %>
+      <div class="row" id="categories">
+        <% @categories.each do |category| %>
+          <div class="col-md-6 col-lg-4 mb-4">
+            <%= render category %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-5">
+        <div class="glass-card p-5">
+          <div class="mb-4">
+            <i class="bi bi-folder2-open" style="font-size: 4rem; color: rgba(255, 255, 255, 0.4);"></i>
+          </div>
+          <h3 class="glass-text-white mb-3 fw-light">No Categories Yet</h3>
+          <p class="glass-text-muted mb-4">Get started by creating your first category to organize your products.</p>
+          <%= link_to new_category_path, class: "btn btn-primary" do %>
+            <i class="bi bi-plus-circle me-2"></i>
+            Create First Category
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

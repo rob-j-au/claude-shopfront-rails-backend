@@ -1,0 +1,30 @@
+<div class="container glass-container pt-4 pb-5">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <!-- Breadcrumb Navigation -->
+      <div class="mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="glass-breadcrumb breadcrumb mb-0">
+            <li class="breadcrumb-item"><%= link_to "Products", products_path %></li>
+            <li class="breadcrumb-item active" aria-current="page">New Product</li>
+          </ol>
+        </nav>
+      </div>
+
+      <!-- New Product Card -->
+      <div class="glass-card">
+        <div class="glass-card-header">
+          <h1 class="h3 mb-0 glass-text-white fw-light">
+            <i class="bi bi-plus-circle me-3"></i>
+            Create New Product
+          </h1>
+          <p class="glass-text-muted mb-0 mt-2">Add a new product to your inventory</p>
+        </div>
+        
+        <div class="glass-card-body">
+          <%= render 'form', product: @product %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,271 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Products</h1>
+  <%= link_to "New Product", new_product_path, class: "btn btn-success" %>
+</div>
+
+<!-- Infinite Scroll Status -->
+<div id="infinite-scroll-status" class="alert alert-info mb-3">
+  Infinite scroll is ready! Scroll down to load more products.
+</div>
+
+<!-- Search and Filter Form -->
+<div class="row mb-4">
+  <div class="col-12">
+    <%= form_with url: products_path, method: :get, local: true, class: "d-flex flex-wrap gap-2 align-items-end" do |form| %>
+      <div class="flex-grow-1">
+        <%= form.text_field :search, placeholder: "Search products...", 
+                            value: params[:search], 
+                            class: "form-control" %>
+      </div>
+      <div>
+        <%= form.select :category, 
+                        options_for_select([
+                          ['All Categories', ''],
+                          ['Electronics', 'Electronics'],
+                          ['Home & Garden', 'Home & Garden'],
+                          ['Sports & Fitness', 'Sports & Fitness'],
+                          ['Books & Media', 'Books & Media'],
+                          ['Fashion & Accessories', 'Fashion & Accessories'],
+                          ['Kitchen & Dining', 'Kitchen & Dining'],
+                          ['Office Supplies', 'Office Supplies'],
+                          ['Beauty & Personal Care', 'Beauty & Personal Care'],
+                          ['Automotive & Tools', 'Automotive & Tools'],
+                          ['Pet Supplies', 'Pet Supplies'],
+                          ['Gaming & Entertainment', 'Gaming & Entertainment'],
+                          ['Travel & Outdoor', 'Travel & Outdoor'],
+                          ['Health & Wellness', 'Health & Wellness'],
+                          ['Baby & Kids', 'Baby & Kids'],
+                          ['Accessories', 'Accessories']
+                        ], params[:category]), 
+                        { include_blank: false }, 
+                        { class: "form-select" } %>
+      </div>
+      <div>
+        <%= form.submit "Search", class: "btn btn-primary" %>
+        <%= link_to "Clear", products_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Results Summary -->
+<% if params[:search].present? || params[:category].present? %>
+  <div class="mb-3">
+    <p class="text-muted">
+      Showing <%= @products.length %> of <%= @total_count %> products
+      <% if params[:search].present? %>
+        matching "<%= params[:search] %>"
+      <% end %>
+      <% if params[:category].present? %>
+        in <%= params[:category] %>
+      <% end %>
+    </p>
+  </div>
+<% else %>
+  <div class="mb-3">
+    <p class="text-muted">Showing <%= @products.length %> of <%= @total_count %> products</p>
+  </div>
+<% end %>
+
+<div class="row" id="products-container">
+  <div class="row" id="products-list">
+    <% if @products.any? %>
+      <% @products.each do |product| %>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= product.name %></h5>
+              <p class="card-text"><%= truncate(product.description, length: 100) %></p>
+              <p class="card-text">
+                <strong><%= product.formatted_price %></strong>
+                <% if product.in_stock? %>
+                  <span class="badge bg-success">In Stock (<%= product.stock_quantity %>)</span>
+                <% else %>
+                  <span class="badge bg-danger">Out of Stock</span>
+                <% end %>
+              </p>
+              <p class="card-text">
+                <small class="text-muted">SKU: <%= product.sku %></small>
+              </p>
+            </div>
+            <div class="card-footer">
+              <%= link_to "View", product, class: "btn btn-outline-primary btn-sm" %>
+              <%= link_to "Edit", edit_product_path(product), class: "btn btn-outline-secondary btn-sm" %>
+              <%= link_to "Delete", product, method: :delete, 
+                          confirm: "Are you sure?", 
+                          class: "btn btn-outline-danger btn-sm" %>
+              <% if product.in_stock? %>
+                <%= form_with url: cart_add_path, method: :post, local: true, class: "d-inline mt-2" do |form| %>
+                  <%= form.hidden_field :product_id, value: product.id %>
+                  <%= form.hidden_field :quantity, value: 1 %>
+                  <%= form.submit "Add to Cart", class: "btn btn-success btn-sm" %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="col-12">
+        <div class="alert alert-info">
+          <h4>No products found</h4>
+          <p><%= link_to "Create the first product", new_product_path, class: "btn btn-primary" %></p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+  <!-- Loading indicator -->
+  <div id="loading-indicator" class="text-center mt-4" style="display: none;">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading more products...</p>
+  </div>
+
+  <!-- End of results message -->
+  <div id="end-message" class="text-center mt-4" style="display: none;">
+    <h6>You've reached the end!</h6>
+    <p class="text-muted">Showing all <%= @total_count %> products.</p>
+  </div>
+</div>
+
+<script>
+// Vanilla JavaScript Infinite Scroll Implementation
+(function() {
+  let currentPage = <%= @current_page %>;
+  let totalPages = <%= @total_pages %>;
+  let isLoading = false;
+  const baseUrl = '<%= products_path %>';
+  
+  // Get current search parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchParams = {
+    search: urlParams.get('search') || '',
+    category: urlParams.get('category') || ''
+  };
+  
+  console.log('Infinite scroll initialized:', {
+    currentPage: currentPage,
+    totalPages: totalPages,
+    searchParams: searchParams
+  });
+  
+  // Update status message
+  const statusElement = document.getElementById('infinite-scroll-status');
+  if (statusElement) {
+    statusElement.textContent = `Infinite scroll active! Page ${currentPage} of ${totalPages}`;
+    statusElement.className = 'alert alert-success mb-3';
+  }
+  
+  // Get DOM elements
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const endMessage = document.getElementById('end-message');
+  const productsList = document.getElementById('products-list');
+  
+  // Show appropriate message based on pagination state
+  if (currentPage >= totalPages) {
+    endMessage.style.display = 'block';
+  } else {
+    loadingIndicator.style.display = 'block';
+  }
+  
+  // Function to load more products
+  function loadMoreProducts() {
+    if (isLoading || currentPage >= totalPages) return;
+    
+    isLoading = true;
+    const nextPage = currentPage + 1;
+    
+    console.log('Loading page:', nextPage);
+    
+    // Build URL with search parameters
+    const params = new URLSearchParams(searchParams);
+    params.set('page', nextPage);
+    const url = `${baseUrl}.json?${params.toString()}`;
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Loaded products:', data.products.length);
+        
+        // Add new products to the list
+        data.products.forEach(product => {
+          const productHtml = `
+            <div class="col-md-4 mb-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h5 class="card-title">${product.name}</h5>
+                  <p class="card-text">${product.description.substring(0, 100)}...</p>
+                  <p class="card-text">
+                    <strong>${product.price}</strong>
+                    <span class="badge ${product.in_stock ? 'bg-success' : 'bg-danger'} ms-2">
+                      ${product.in_stock ? `In Stock (${product.stock_quantity})` : 'Out of Stock'}
+                    </span>
+                  </p>
+                  <p class="card-text"><small class="text-muted">SKU: ${product.sku}</small></p>
+                </div>
+                <div class="card-footer">
+                  <a href="${product.show_path}" class="btn btn-outline-primary btn-sm">View</a>
+                  <a href="${product.edit_path}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                  <a href="${product.delete_path}" class="btn btn-outline-danger btn-sm" data-method="delete" data-confirm="Are you sure?">Delete</a>
+                  ${product.in_stock ? `
+                    <form action="/cart/add" method="post" class="d-inline mt-2">
+                      <input type="hidden" name="product_id" value="${product.id}">
+                      <input type="hidden" name="quantity" value="1">
+                      <input type="submit" value="Add to Cart" class="btn btn-success btn-sm">
+                    </form>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+          productsList.insertAdjacentHTML('beforeend', productHtml);
+        });
+        
+        // Update pagination state
+        currentPage = data.pagination.current_page;
+        totalPages = data.pagination.total_pages;
+        
+        // Update status
+        if (statusElement) {
+          statusElement.textContent = `Loaded page ${currentPage} of ${totalPages}`;
+        }
+        
+        // Show/hide loading indicators
+        if (currentPage >= totalPages) {
+          loadingIndicator.style.display = 'none';
+          endMessage.style.display = 'block';
+        }
+        
+        isLoading = false;
+      })
+      .catch(error => {
+        console.error('Error loading products:', error);
+        isLoading = false;
+        if (statusElement) {
+          statusElement.textContent = 'Error loading more products. Please try again.';
+          statusElement.className = 'alert alert-danger mb-3';
+        }
+      });
+  }
+  
+  // Set up intersection observer
+  if (loadingIndicator) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && currentPage < totalPages) {
+          console.log('Loading indicator visible, loading more products...');
+          loadMoreProducts();
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '100px'
+    });
+    
+    observer.observe(loadingIndicator);
+  }
+  
+})();
+</script>
